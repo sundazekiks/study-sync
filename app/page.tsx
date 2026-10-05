@@ -143,22 +143,20 @@ export default function Home() {
             <button
               type="button"
               onClick={() => setMode("login")}
-              className={`flex-1 rounded-md px-3 py-1.5 transition ${
-                mode === "login"
-                  ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-900 dark:text-zinc-50"
-                  : "text-zinc-500"
-              }`}
+              className={`flex-1 rounded-md px-3 py-1.5 transition ${mode === "login"
+                ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-900 dark:text-zinc-50"
+                : "text-zinc-500"
+                }`}
             >
               Sign in
             </button>
             <button
               type="button"
               onClick={() => setMode("signup")}
-              className={`flex-1 rounded-md px-3 py-1.5 transition ${
-                mode === "signup"
-                  ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-900 dark:text-zinc-50"
-                  : "text-zinc-500"
-              }`}
+              className={`flex-1 rounded-md px-3 py-1.5 transition ${mode === "signup"
+                ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-900 dark:text-zinc-50"
+                : "text-zinc-500"
+                }`}
             >
               Create account
             </button>
@@ -167,11 +165,10 @@ export default function Home() {
           {notice && (
             <p
               role="alert"
-              className={`mb-4 rounded-md px-3 py-2 text-sm ${
-                notice.type === "error"
-                  ? "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300"
-                  : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
-              }`}
+              className={`mb-4 rounded-md px-3 py-2 text-sm ${notice.type === "error"
+                ? "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300"
+                : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                }`}
             >
               {notice.text}
             </p>
@@ -244,23 +241,30 @@ export default function Home() {
           </h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">{user.email}</p>
         </div>
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-        >
-          Sign out
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          >
+            Sign out
+          </button>
+          <Link
+            href={`/tasks`}
+            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          >
+            Tasks
+          </Link>
+        </div>
       </header>
 
       {notice && (
         <p
           role="alert"
-          className={`rounded-md px-3 py-2 text-sm ${
-            notice.type === "error"
-              ? "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300"
-              : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
-          }`}
+          className={`rounded-md px-3 py-2 text-sm ${notice.type === "error"
+            ? "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300"
+            : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+            }`}
         >
           {notice.text}
         </p>
