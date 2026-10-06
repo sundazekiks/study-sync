@@ -1,10 +1,10 @@
-import { getSessionUser } from "@/lib/auth";
+import { auth } from '@/auth'
 import { RedirectType, redirect } from "next/navigation";
 import TaskForm from "@/components/Tasks/TaskForm";
 
 export default async function NewTaskPage() {
-    const session = await getSessionUser();
-    if (!session) redirect("/", RedirectType.push);
+    const session = await auth();
+    if (!session?.user) redirect("/login", RedirectType.push);
 
     return (
         <div className="mx-auto max-w-2xl px-6 py-10">

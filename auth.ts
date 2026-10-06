@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import { authConfig } from "./auth.config";
 import * as z from 'zod'
-import { connectDB, toUser } from "./lib/mongo";
+import { connectDB, newId, toUser } from "./lib/mongo";
 import { User as UserModel } from "./lib/mongo";
 import GitHub from "next-auth/providers/github";
 
@@ -29,6 +29,28 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session: ({ session, token }) => {
             if (token.id) session.user.id = token.id as string;
             return session;
+        },
+        signIn: async ({ account, user }) => {
+            if (account?.provider === "github") {
+                if (!user.email) return false;
+
+                await connectDB();
+
+                let dbUser = await UserModel.findOne({ email: user.email });
+
+                if (!dbUser) {
+                    dbUser = await UserModel.create({
+                        _id: newId("usr"),
+                        email: user.email,
+                        displayName: user.name ?? user.email,
+                        createdAt: new Date().toISOString(),
+                        passwordHash: user.name as string
+                    });
+                }
+
+                user.id = dbUser._id;
+            }
+            return true;
         }
     },
     providers: [

@@ -3,7 +3,7 @@
 import { signIn, signOut, auth } from "@/auth"
 import { AuthError } from "next-auth";
 import { redirect } from 'next/navigation'
-import { connectDB, Course as CourseModel, newId, Resource as ResourceModel, toCourse } from "@/lib/mongo";
+import { connectDB, Course as CourseModel, newId, Resource as ResourceModel, toCourse, User as UserModel } from '@/lib/mongo';
 
 
 export type SignInState = { error?: string } | undefined;
@@ -45,7 +45,8 @@ export const getUserCourses = async () => {
     }
 
     await connectDB();
-    const courses = await CourseModel.find({ "members.userId": user?.user.id }).lean();
+    const userId = await UserModel.findOne({ email: user.user.email })
+    const courses = await CourseModel.find({ "members.userId": userId?._id }).lean();
     const resourceCounts = await ResourceModel.aggregate<{ _id: string; count: number }>([
         { $group: { _id: "$courseId", count: { $sum: 1 } } },
     ]);

@@ -26,7 +26,7 @@ export default function SignInForm() {
                         autoComplete="email"
                         placeholder="you@example.com"
                         required
-                        className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 shadow-sm transition placeholder:text-gray-400 hover:border-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/15"
+                        className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 te   xt-sm text-gray-900 shadow-sm transition placeholder:text-gray-400 hover:border-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/15"
                     />
                 </div>
 
