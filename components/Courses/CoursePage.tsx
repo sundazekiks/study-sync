@@ -10,14 +10,24 @@ interface CurrentUser {
     displayName: string;
 }
 
+interface Course {
+    id: string;
+    name: string;
+    description: string;
+    color: string;
+    role: "owner" | "moderator" | "member";
+    resourceCount: number;
+    createdAt: string;
+}
 
-export default function CoursePage({ User }: {
-    User: CurrentUser | null
+export default function CoursePage({ User, Courses }: {
+    User: CurrentUser | null,
+    Courses: Course[]
 }) {
 
     const [user, setUser] = useState<CurrentUser | null>(null);
     const [loading, setLoading] = useState(true);
-    const [courses, setCourses] = useState<CourseView[]>([]);
+    const [courses, setCourses] = useState<CourseView[] | Course[]>(Courses);
     const [mode, setMode] = useState<"login" | "signup">("login");
     const [form, setForm] = useState({ email: "", displayName: "", password: "" });
     const [newCourse, setNewCourse] = useState({ name: "", description: "" });
@@ -67,7 +77,6 @@ export default function CoursePage({ User }: {
             setWorking(false);
         }
     }
-
 
     return (<main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-6 py-10">
         <header className="flex items-center justify-between">

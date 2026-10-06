@@ -19,7 +19,16 @@ const SignInSchema = z.object({
 export const { handlers, signIn, signOut, auth } = NextAuth({
     ...authConfig,
     callbacks: {
-
+        jwt: ({ token, user }) => {
+            if (user) {
+                token.id = user.id; // only exists at sign-in
+            }
+            return token;
+        },
+        session: ({ session, token }) => {
+            if (token.id) session.user.id = token.id as string;
+            return session;
+        }
     },
     providers: [
         Credentials(
@@ -44,7 +53,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         if (!user || !verifyPassword(password as string, user.passwordHash)) {
                             return null
                         }
-
                         return {
                             id: user.id,
                             email: user.email,
