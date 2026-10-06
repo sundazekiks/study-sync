@@ -3,6 +3,7 @@ import { authConfig } from "./auth.config";
 import * as z from 'zod'
 import { connectDB, toUser } from "./lib/mongo";
 import { User as UserModel } from "./lib/mongo";
+import GitHub from "next-auth/providers/github";
 
 
 // Providers Imports
@@ -65,6 +66,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
                 }
             }
-        )
+        ),
+        GitHub
     ]
 })

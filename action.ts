@@ -69,3 +69,8 @@ export const getUserCourses = async () => {
 
     return { courses: myCourses };
 }
+
+
+export async function GithubSignIn() {
+    await signIn("github", { redirectTo: "/courses" });
+}

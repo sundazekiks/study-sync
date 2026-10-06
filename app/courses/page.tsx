@@ -11,7 +11,6 @@ export default async function Courses() {
     }
     const courses = await getUserCourses();
 
-    console.log(session.user)
     return (<CoursePage User={{
         id: session.user.id as string,
         email: session.user.email as string,
