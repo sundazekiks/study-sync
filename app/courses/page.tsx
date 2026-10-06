@@ -10,7 +10,6 @@ export default async function Courses() {
         redirect('/login')
     }
     const courses = await getUserCourses();
-
     return (<CoursePage User={{
         id: session.user.id as string,
         email: session.user.email as string,

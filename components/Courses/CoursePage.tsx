@@ -25,7 +25,7 @@ export default function CoursePage({ User, Courses }: {
     Courses: Course[]
 }) {
 
-    const [user, setUser] = useState<CurrentUser | null>(null);
+    const [user, setUser] = useState<CurrentUser | null>(User);
     const [loading, setLoading] = useState(true);
     const [courses, setCourses] = useState<CourseView[] | Course[]>(Courses);
     const [mode, setMode] = useState<"login" | "signup">("login");
