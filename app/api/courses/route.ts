@@ -6,20 +6,45 @@ import { connectDB, Course as CourseModel, newId, toCourse } from "@/lib/mongo";
 import type { CourseDoc } from "@/lib/mongo";
 import type { Role } from "@/lib/types";
 
+import { auth } from "@/auth";
+
 const COLORS = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 
 export async function GET() {
-  const user = await getSessionUser();
-  if (!user) {
+  const user = await auth();
+  if (!user?.user) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
 
-  return NextResponse.json({ courses: await listCourseViews(user.id) });
+  await connectDB();
+  const courses = await CourseModel.find({ "members.userId": user?.user.id }).lean();
+  const resourceCounts = await ResourceModel.aggregate<{ _id: string; count: number }>([
+    { $group: { _id: "$courseId", count: { $sum: 1 } } },
+  ]);
+  const countByCourse = new Map(resourceCounts.map((r) => [r._id, r.count]));
+
+  const myCourses = courses
+    .map((c) => {
+      const course = toCourse(c);
+      const membership = course.members.find((m) => m.userId === user?.user?.id)!;
+      return {
+        id: course.id,
+        name: course.name,
+        description: course.description,
+        color: course.color,
+        role: membership.role,
+        resourceCount: countByCourse.get(course.id) ?? 0,
+        createdAt: course.createdAt,
+      };
+    })
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+  return NextResponse.json({ courses: myCourses });
 }
 
 export async function POST(request: Request) {
-  const user = await getSessionUser();
-  if (!user) {
+  const user = await auth();
+  if (!user?.user) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
 
@@ -55,8 +80,8 @@ export async function POST(request: Request) {
     name: trimmedName,
     description: (description ?? "").trim(),
     color,
-    ownerId: user.id,
-    members: [{ userId: user.id, role: "owner" as Role, joinedAt: new Date().toISOString() }],
+    ownerId: user.user.id,
+    members: [{ userId: user.user.id, role: "owner" as Role, joinedAt: new Date().toISOString() }],
     createdAt: new Date().toISOString(),
   });
   const course = toCourse(doc.toObject() as CourseDoc);
