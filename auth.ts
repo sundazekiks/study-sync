@@ -1,0 +1,94 @@
+import NextAuth from "next-auth";
+import { authConfig } from "./auth.config";
+import * as z from 'zod'
+import { connectDB, newId, toUser } from "./lib/mongo";
+import { User as UserModel } from "./lib/mongo";
+import GitHub from "next-auth/providers/github";
+
+
+// Providers Imports
+import Credentials from "next-auth/providers/credentials";
+import { verifyPassword } from "./lib/auth";
+
+
+// Zod Schema for Validation
+const SignInSchema = z.object({
+    email: z.email(),
+    password: z.string()
+})
+
+export const { handlers, signIn, signOut, auth } = NextAuth({
+    ...authConfig,
+    callbacks: {
+        jwt: ({ token, user }) => {
+            if (user) {
+                token.id = user.id; // only exists at sign-in
+            }
+            return token;
+        },
+        session: ({ session, token }) => {
+            if (token.id) session.user.id = token.id as string;
+            return session;
+        },
+        signIn: async ({ account, user }) => {
+            if (account?.provider === "github") {
+                if (!user.email) return false;
+
+                await connectDB();
+
+                let dbUser = await UserModel.findOne({ email: user.email });
+
+                if (!dbUser) {
+                    dbUser = await UserModel.create({
+                        _id: newId("usr"),
+                        email: user.email,
+                        displayName: user.name ?? user.email,
+                        createdAt: new Date().toISOString(),
+                        passwordHash: user.name as string
+                    });
+                }
+
+                user.id = dbUser._id;
+            }
+            return true;
+        }
+    },
+    providers: [
+        Credentials(
+            {
+                credentials: {
+                    email: { label: "Email", type: "email" },
+                    password: { label: "Password", type: "password" }
+                },
+                authorize: async (credentials) => {
+                    const { email, password } = credentials;
+
+                    try {
+                        // Validate data
+                        const isValidData = SignInSchema.safeParse({ email, password })
+                        if (!isValidData.success) throw new Error();
+                        // connect to db
+                        await connectDB();
+                        // Find user by email
+                        const existingUser = await UserModel.findOne({ email: isValidData.data.email }).lean();
+                        const user = existingUser ? toUser(existingUser) : null;
+
+                        if (!user || !verifyPassword(password as string, user.passwordHash)) {
+                            return null
+                        }
+                        return {
+                            id: user.id,
+                            email: user.email,
+                            name: user.displayName
+                        }
+                    } catch (err) {
+                        if (err instanceof z.ZodError) console.log(err.issues)
+                        return null;
+                    }
+
+                }
+            }
+        ),
+        GitHub
+    ]
+})

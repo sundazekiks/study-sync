@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   description: "One course hub for collaborative study materials.",
 };
 
-export default async function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"

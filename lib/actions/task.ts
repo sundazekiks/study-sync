@@ -1,8 +1,9 @@
 "use server";
 
-import { getSessionUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Task } from "@/lib/schemas/task";
+import { auth } from "@/auth";
+import { connectDB, User } from "@/lib/mongo";
 
 type CreateTaskInput = {
     title: string;
@@ -12,15 +13,16 @@ type CreateTaskInput = {
 };
 
 export async function createTask(input: CreateTaskInput) {
-    const session = await getSessionUser();
-    if (!session) redirect("/");
+    const session = await auth();
+    if (!session?.user) redirect("/login");
+    await connectDB();
 
     if (!input.title.trim()) {
         throw new Error("Title is required");
     }
-
+    const userId = await User.findOne({ email: session.user.email })
     await Task.create({
-        userId: session.id,
+        userId: userId?._id,
         title: input.title.trim(),
         description: input.description?.trim() || undefined,
         dueDate: input.dueDate,

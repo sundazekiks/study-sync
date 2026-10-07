@@ -1,15 +1,17 @@
-import { getSessionUser } from "@/lib/auth";
 import { RedirectType, redirect } from "next/navigation";
 import { Task } from "@/lib/schemas/task";
 import TaskList from "@/components/Tasks/TaskList";
 import Link from "next/link";
+import { auth } from "@/auth";
+import { connectDB, User } from "@/lib/mongo";
 
 
 export default async function Page() {
-    const session = await getSessionUser();
-    if (!session) redirect("/", RedirectType.push);
-
-    const tasks = await Task.find({ userId: session.id }).sort({ dueDate: 1 });
+    const session = await auth();
+    if (!session?.user) redirect("/", RedirectType.push);
+    await connectDB();
+    const userId = await User.findOne({ email: session.user.email })
+    const tasks = await Task.find({ userId: userId?._id }).sort({ dueDate: 1 });
 
     const now = new Date();
     const overdue = tasks.filter((t) => {
