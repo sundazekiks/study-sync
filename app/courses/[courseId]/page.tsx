@@ -6,8 +6,6 @@ import { useRouter } from "next/navigation";
 
 import type { ResourceView } from "@/lib/types";
 
-import TasksSection from "./tasks-section";
-
 interface CourseDetail {
   id: string;
   name: string;
@@ -86,10 +84,6 @@ export default function CourseHubPage({
   const [memberEmail, setMemberEmail] = useState("");
   const [memberRole, setMemberRole] = useState("member");
 
-  const [courseSettingsOpen, setCourseSettingsOpen] = useState(false);
-  const [courseForm, setCourseForm] = useState({ name: "", description: "" });
-  const [settingsNotice, setSettingsNotice] = useState<Notice>(null);
-
   const load = useCallback(async () => {
     const courseRes = await fetch(`/api/courses/${courseId}`);
     if (courseRes.status === 401) {
@@ -129,10 +123,6 @@ export default function CourseHubPage({
       const courseData = await courseRes.json();
       if (ignore) return;
       setCourse(courseData.course);
-      setCourseForm({
-        name: courseData.course.name,
-        description: courseData.course.description ?? "",
-      });
 
       const resRes = await fetch(`/api/courses/${courseId}/resources`);
       const resData = await resRes.json();
@@ -282,52 +272,6 @@ export default function CourseHubPage({
     }
   }
 
-  async function handleUpdateCourse(e: React.FormEvent) {
-    e.preventDefault();
-    setSettingsNotice(null);
-    setWorking(true);
-    try {
-      const res = await fetch(`/api/courses/${courseId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: courseForm.name, description: courseForm.description }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setSettingsNotice({ type: "error", text: data.error ?? "Could not update course." });
-        return;
-      }
-      setSettingsNotice({ type: "success", text: "Course updated." });
-      await load();
-    } catch {
-      setSettingsNotice({ type: "error", text: "Network error. Try again." });
-    } finally {
-      setWorking(false);
-    }
-  }
-
-  async function handleDeleteCourse() {
-    if (!course) return;
-    if (!window.confirm(`Delete "${course.name}"? This removes its tasks and resources too.`)) {
-      return;
-    }
-    setSettingsNotice(null);
-    setWorking(true);
-    try {
-      const res = await fetch(`/api/courses/${courseId}`, { method: "DELETE" });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setSettingsNotice({ type: "error", text: data.error ?? "Could not delete course." });
-        return;
-      }
-      router.replace("/");
-      router.refresh();
-    } catch {
-      setSettingsNotice({ type: "error", text: "Network error. Try again." });
-      setWorking(false);
-    }
-  }
-
   if (loading) {
     return (
       <div className="flex flex-1 items-center justify-center p-12 text-sm text-zinc-500">
@@ -356,7 +300,6 @@ export default function CourseHubPage({
   }
 
   const canManageMembers = course.myRole === "owner";
-  const isOwner = course.myRole === "owner";
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-6 py-10">
@@ -452,92 +395,6 @@ export default function CourseHubPage({
           {notice.text}
         </p>
       )}
-
-      {isOwner && (
-        <section className="flex flex-col gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              setCourseSettingsOpen((open) => !open);
-              setSettingsNotice(null);
-              setCourseForm({ name: course.name, description: course.description ?? "" });
-            }}
-            className="self-start rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-          >
-            {courseSettingsOpen ? "Hide course settings" : "Course settings"}
-          </button>
-          {courseSettingsOpen && (
-            <div className="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-              {settingsNotice && (
-                <p
-                  role="alert"
-                  className={`rounded-md px-3 py-2 text-sm ${
-                    settingsNotice.type === "error"
-                      ? "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300"
-                      : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
-                  }`}
-                >
-                  {settingsNotice.text}
-                </p>
-              )}
-              <form onSubmit={handleUpdateCourse} className="flex flex-col gap-4">
-                <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-                  Edit course information
-                </h2>
-                <label className="flex flex-col gap-1.5 text-sm">
-                  <span className="font-medium text-zinc-700 dark:text-zinc-300">Course name</span>
-                  <input
-                    type="text"
-                    value={courseForm.name}
-                    onChange={(e) => setCourseForm({ ...courseForm, name: e.target.value })}
-                    className="rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
-                    required
-                    maxLength={80}
-                  />
-                </label>
-                <label className="flex flex-col gap-1.5 text-sm">
-                  <span className="font-medium text-zinc-700 dark:text-zinc-300">
-                    Description
-                  </span>
-                  <textarea
-                    value={courseForm.description}
-                    onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
-                    rows={2}
-                    maxLength={500}
-                    className="rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
-                    placeholder="Optional description"
-                  />
-                </label>
-                <button
-                  type="submit"
-                  disabled={working}
-                  className="self-start rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white transition hover:bg-indigo-500 disabled:opacity-60"
-                >
-                  {working ? "Saving…" : "Save changes"}
-                </button>
-              </form>
-              <div className="border-t border-zinc-200 pt-4 dark:border-zinc-800">
-                <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-                  Delete course
-                </h2>
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                  Removing this course also removes its tasks and resources. This cannot be undone.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => void handleDeleteCourse()}
-                  disabled={working}
-                  className="mt-3 rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-60 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/40"
-                >
-                  Delete course
-                </button>
-              </div>
-            </div>
-          )}
-        </section>
-      )}
-
-      <TasksSection courseId={courseId} members={course.members} />
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Add a resource</h2>
