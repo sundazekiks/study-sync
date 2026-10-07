@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { getSessionUser } from "@/lib/auth";
-import { connectDB, Course as CourseModel, newId, Resource as ResourceModel, toCourse } from "@/lib/mongo";
+import { listCourseViews } from "@/lib/courses";
+import { connectDB, Course as CourseModel, newId, toCourse } from "@/lib/mongo";
 import type { CourseDoc } from "@/lib/mongo";
 import type { Role } from "@/lib/types";
 

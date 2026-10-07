@@ -11,9 +11,39 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const description = "One course hub for collaborative study materials.";
+
 export const metadata: Metadata = {
-  title: "StudySync",
-  description: "One course hub for collaborative study materials.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "StudySync",
+    template: "%s | StudySync",
+  },
+  description,
+  applicationName: "StudySync",
+  keywords: [
+    "study groups",
+    "collaborative study planner",
+    "course resources",
+    "study scheduler",
+  ],
+  openGraph: {
+    type: "website",
+    siteName: "StudySync",
+    title: "StudySync",
+    description,
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "StudySync",
+    description,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

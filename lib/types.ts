@@ -6,21 +6,58 @@ export interface User {
   id: string;
   email: string;
   displayName: string;
-  passwordHash: string;
   createdAt: string;
-}
-
-export interface Session {
-  token: string;
-  userId: string;
-  createdAt: string;
-  expiresAt: string;
 }
 
 export interface Membership {
   userId: string;
   role: Role;
   joinedAt: string;
+}
+
+export type TaskStatus = "not-started" | "in-progress" | "completed";
+
+export interface TaskSummary {
+  total: number;
+  notStarted: number;
+  inProgress: number;
+  completed: number;
+}
+
+export interface Task {
+  id: string;
+  courseId: string;
+  title: string;
+  description: string;
+  dueDate: string;
+  assigneeId: string;
+  status: TaskStatus;
+  createdById: string;
+  createdAt: string;
+  updatedById: string;
+  updatedAt: string;
+}
+
+export interface TaskView {
+  id: string;
+  courseId: string;
+  title: string;
+  description: string;
+  dueDate: string;
+  status: TaskStatus;
+  creator: {
+    id: string;
+    displayName: string;
+  };
+  assignee: {
+    id: string;
+    displayName: string;
+  } | null;
+  createdAt: string;
+  updatedAt: string;
+  canEdit: boolean;
+  canDelete: boolean;
+  canProgress: boolean;
 }
 
 export interface Course {
@@ -30,6 +67,7 @@ export interface Course {
   color: string;
   ownerId: string;
   members: Membership[];
+  taskSummary: TaskSummary;
   createdAt: string;
 }
 
@@ -40,6 +78,7 @@ export interface CourseView {
   color: string;
   role: Role;
   resourceCount: number;
+  taskSummary: TaskSummary;
 }
 
 export interface Resource {

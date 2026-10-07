@@ -1,65 +1,69 @@
-import { createHash, randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 
-import { connectDB, newId, Session as SessionModel, toUser, User as UserModel } from "./mongo";
-import type { Session, User } from "./types";
+import {
+  connectDB,
+  newId,
+  Session as SessionModel,
+  toUser,
+  User as UserModel,
+} from "./mongo";
+import type { User } from "./types";
 
-const SESSION_COOKIE = "study_sync_session";
-const SESSION_DAYS = 7;
-
-export function hashPassword(password: string): string {
-  const salt = randomBytes(16).toString("hex");
-  const hash = createHash("sha256").update(`${salt}:${password}`).digest("hex");
-  return `${salt}:${hash}`;
-}
-
-export function verifyPassword(password: string, stored: string): boolean {
-  const [salt, hash] = stored.split(":");
-  const candidate = createHash("sha256")
-    .update(`${salt}:${password}`)
-    .digest("hex");
-  return candidate === hash;
-}
-
-function sessionExpiresAt(): string {
-  return new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000).toISOString();
-}
-
-export async function createSession(userId: string): Promise<Session> {
-  await connectDB();
-  const session: Session = {
-    token: randomBytes(32).toString("hex"),
-    userId,
-    createdAt: new Date().toISOString(),
-    expiresAt: sessionExpiresAt(),
-  };
-  await SessionModel.create({
-    _id: newId("ses"),
-    token: session.token,
-    userId,
-    createdAt: session.createdAt,
-    expiresAt: session.expiresAt,
-  });
-  return session;
-}
-
-export async function deleteSession(token: string): Promise<void> {
-  await connectDB();
-  await SessionModel.deleteOne({ token });
-}
+export const SESSION_COOKIE = "studysync_session";
+export const SESSION_TTL_DAYS = 30;
+const SESSION_TTL_MS = SESSION_TTL_DAYS * 24 * 60 * 60 * 1000;
 
 export async function getSessionUser(): Promise<User | null> {
   const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE)?.value;
-  if (!token) return null;
+  const sessionId = cookieStore.get(SESSION_COOKIE)?.value;
+  if (!sessionId) return null;
 
   await connectDB();
-  const session = await SessionModel.findOne({ token }).lean();
+  const session = await SessionModel.findById(sessionId).lean();
   if (!session) return null;
-  if (Date.parse(session.expiresAt) < Date.now()) return null;
 
-  const user = await UserModel.findById(session.userId).lean();
-  return user ? toUser(user) : null;
+  if (new Date(session.expiresAt).getTime() <= Date.now()) {
+    await SessionModel.deleteOne({ _id: sessionId });
+    return null;
+  }
+
+  const userDoc = await UserModel.findById(session.userId).lean();
+  if (!userDoc) {
+    await SessionModel.deleteOne({ _id: sessionId });
+    return null;
+  }
+  return toUser(userDoc);
+}
+
+export async function createSession(userId: string): Promise<void> {
+  await connectDB();
+  const sessionId = newId("ses");
+  const now = new Date();
+  await SessionModel.create({
+    _id: sessionId,
+    userId,
+    createdAt: now.toISOString(),
+    expiresAt: new Date(now.getTime() + SESSION_TTL_MS),
+  });
+
+  const cookieStore = await cookies();
+  cookieStore.set(SESSION_COOKIE, sessionId, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: SESSION_TTL_DAYS * 24 * 60 * 60,
+  });
+}
+
+export async function destroySession(): Promise<void> {
+  const cookieStore = await cookies();
+  const sessionId = cookieStore.get(SESSION_COOKIE)?.value;
+  if (sessionId) {
+    await connectDB();
+    await SessionModel.deleteOne({ _id: sessionId });
+  }
+  cookieStore.delete(SESSION_COOKIE);
 }
 
 export function publicUser(user: User) {
@@ -69,18 +73,4 @@ export function publicUser(user: User) {
     displayName: user.displayName,
     createdAt: user.createdAt,
   };
-}
-
-export { SESSION_COOKIE };
-
-export async function createFirstUser(email: string, displayName: string, password: string): Promise<User> {
-  await connectDB();
-  const user = await UserModel.create({
-    _id: newId("usr"),
-    email,
-    displayName,
-    passwordHash: hashPassword(password),
-    createdAt: new Date().toISOString(),
-  });
-  return toUser(user);
 }
