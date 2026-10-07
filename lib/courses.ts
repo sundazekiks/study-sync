@@ -1,4 +1,10 @@
-import { connectDB, Course as CourseModel, Resource as ResourceModel, toCourse } from "./mongo";
+import {
+  connectDB,
+  Course as CourseModel,
+  emptyTaskSummary,
+  Resource as ResourceModel,
+  toCourse,
+} from "./mongo";
 import type { CourseView } from "./types";
 
 export async function listCourseViews(userId: string): Promise<CourseView[]> {
@@ -19,5 +25,6 @@ export async function listCourseViews(userId: string): Promise<CourseView[]> {
       color: course.color,
       role: course.members.find((m) => m.userId === userId)?.role ?? "member",
       resourceCount: countByCourse.get(course.id) ?? 0,
+      taskSummary: course.taskSummary ?? emptyTaskSummary(),
     }));
 }

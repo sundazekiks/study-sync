@@ -1,5 +1,7 @@
 import path from "node:path";
 
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "./passwords";
+
 export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 export const MAX_FILE_SIZE_LABEL = "10 MB";
 
@@ -140,4 +142,82 @@ export function parseTags(input: string): string[] {
     .map((t) => t.trim())
     .filter(Boolean)
     .map((t) => t.toLowerCase().replace(/\s+/g, "-"));
+}
+
+export const DISPLAY_NAME_MAX_LENGTH = 60;
+export const EMAIL_MAX_LENGTH = 254;
+export const COURSE_NAME_MAX_LENGTH = 80;
+export const COURSE_DESCRIPTION_MAX_LENGTH = 500;
+
+export function isEmail(value: string): boolean {
+  if (value.length > EMAIL_MAX_LENGTH) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+export function validateSignupFields({
+  displayName,
+  email,
+  password,
+}: {
+  displayName: string;
+  email: string;
+  password: string;
+}): string[] {
+  const errors: string[] = [];
+  if (!displayName) {
+    errors.push("A display name is required.");
+  } else if (displayName.length > DISPLAY_NAME_MAX_LENGTH) {
+    errors.push(`Display name must be ${DISPLAY_NAME_MAX_LENGTH} characters or fewer.`);
+  }
+  if (!email) {
+    errors.push("An email is required.");
+  } else if (!isEmail(email)) {
+    errors.push("Enter a valid email address.");
+  }
+  if (!password) {
+    errors.push("A password is required.");
+  } else if (password.length < PASSWORD_MIN_LENGTH) {
+    errors.push(`Password must be at least ${PASSWORD_MIN_LENGTH} characters.`);
+  } else if (password.length > PASSWORD_MAX_LENGTH) {
+    errors.push(`Password must be ${PASSWORD_MAX_LENGTH} characters or fewer.`);
+  }
+  return errors;
+}
+
+export function validateLoginFields({
+  email,
+  password,
+}: {
+  email: string;
+  password: string;
+}): string[] {
+  const errors: string[] = [];
+  if (!email) {
+    errors.push("An email is required.");
+  } else if (!isEmail(email)) {
+    errors.push("Enter a valid email address.");
+  }
+  if (!password) {
+    errors.push("A password is required.");
+  }
+  return errors;
+}
+
+export function validateCourseFields({
+  name,
+  description,
+}: {
+  name: string;
+  description: string;
+}): string[] {
+  const errors: string[] = [];
+  if (!name) {
+    errors.push("A course name is required.");
+  } else if (name.length > COURSE_NAME_MAX_LENGTH) {
+    errors.push(`Course name must be ${COURSE_NAME_MAX_LENGTH} characters or fewer.`);
+  }
+  if (description.length > COURSE_DESCRIPTION_MAX_LENGTH) {
+    errors.push(`Description must be ${COURSE_DESCRIPTION_MAX_LENGTH} characters or fewer.`);
+  }
+  return errors;
 }

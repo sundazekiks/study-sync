@@ -25,8 +25,17 @@ const userSchema = new mongoose.Schema({
   _id: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   displayName: { type: String, required: true },
+  passwordHash: { type: String, required: true },
   createdAt: { type: String, required: true },
 });
+
+const sessionSchema = new mongoose.Schema({
+  _id: { type: String, required: true },
+  userId: { type: String, required: true, index: true },
+  createdAt: { type: String, required: true },
+  expiresAt: { type: Date, required: true, index: true },
+});
+sessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 const membershipSchema = new mongoose.Schema(
   {
@@ -97,6 +106,9 @@ const resourceSchema = new mongoose.Schema({
 export const User =
   (mongoose.models.User as mongoose.Model<UserDoc>) ??
   mongoose.model<UserDoc>("User", userSchema);
+export const Session =
+  (mongoose.models.Session as mongoose.Model<SessionDoc>) ??
+  mongoose.model<SessionDoc>("Session", sessionSchema);
 export const Course =
   (mongoose.models.Course as mongoose.Model<CourseDoc>) ??
   mongoose.model<CourseDoc>("Course", courseSchema);
@@ -111,7 +123,15 @@ export interface UserDoc {
   _id: string;
   email: string;
   displayName: string;
+  passwordHash: string;
   createdAt: string;
+}
+
+export interface SessionDoc {
+  _id: string;
+  userId: string;
+  createdAt: string;
+  expiresAt: Date;
 }
 
 export interface MembershipDoc {

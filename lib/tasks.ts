@@ -186,3 +186,54 @@ export async function listTasksAssignedTo(userId: string, limit = 10): Promise<M
       };
     });
 }
+
+export async function listTasksForUser(
+  userId: string,
+  opts: { courseId?: string; status?: string; assignee?: string; limit?: number } = {}
+): Promise<{ tasks: MyTaskView[]; matches: number }> {
+  await connectDB();
+  const courseDocs = await CourseModel.find({ "members.userId": userId }).lean();
+  const courses = courseDocs.map(toCourse);
+  const courseById = new Map(courses.map((c) => [c.id, c]));
+
+  const filter: Record<string, unknown> = {};
+  if (opts.courseId) {
+    if (!courseById.has(opts.courseId)) {
+      return { tasks: [], matches: 0 };
+    }
+    filter.courseId = opts.courseId;
+  } else if (courseById.size > 0) {
+    filter.courseId = { $in: [...courseById.keys()] };
+  } else {
+    return { tasks: [], matches: 0 };
+  }
+
+  if (opts.status && opts.status !== "all") {
+    if (!isTaskStatus(opts.status)) return { tasks: [], matches: 0 };
+    filter.status = opts.status;
+  }
+  if (opts.assignee === "me") {
+    filter.assigneeId = userId;
+  } else if (opts.assignee && opts.assignee !== "all") {
+    filter.assigneeId = opts.assignee;
+  }
+
+  const docs = await TaskModel.find(filter).lean();
+  const names = await displayNames(
+    docs.flatMap((d) => [d.createdById, d.assigneeId])
+  );
+
+  const tasks = sortTasksByDueDate(docs)
+    .filter((doc) => courseById.has(doc.courseId))
+    .slice(0, opts.limit ?? 50)
+    .map((doc) => {
+      const course = courseById.get(doc.courseId)!;
+      return {
+        ...toTaskView(doc, names, course, userId),
+        courseName: course.name,
+        courseColor: course.color,
+      };
+    });
+
+  return { tasks, matches: tasks.length };
+}

@@ -78,6 +78,7 @@ export interface CourseView {
   color: string;
   role: Role;
   resourceCount: number;
+  taskSummary: TaskSummary;
 }
 
 export interface Resource {
