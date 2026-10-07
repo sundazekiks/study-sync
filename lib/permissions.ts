@@ -43,22 +43,3 @@ export function canManageResource(
   if (resource.createdById === userId) return true;
   return isModerator(course, userId);
 }
-
-export function canManageTask(
-  course: Course,
-  task: { createdById: string },
-  userId: string
-): boolean {
-  if (task.createdById === userId) return true;
-  return isModerator(course, userId);
-}
-
-export function canUpdateTaskProgress(
-  course: Course,
-  task: { createdById: string; assigneeId: string },
-  userId: string
-): boolean {
-  if (task.createdById === userId) return true;
-  if (task.assigneeId === userId) return true;
-  return isModerator(course, userId);
-}

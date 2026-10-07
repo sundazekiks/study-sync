@@ -1,13 +1,130 @@
-import Dashboard from "@/app/components/dashboard";
-import Landing from "@/app/components/landing";
-import MyTasks from "@/app/components/my-tasks";
-import SignOutButton from "@/app/components/sign-out-button";
-import { getSessionUser } from "@/lib/auth";
-import { listCourseViews } from "@/lib/courses";
-import { getDashboardStats } from "@/lib/dashboard";
+"use client";
 
-export default async function Home() {
-  const user = await getSessionUser();
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+
+import type { CourseView } from "@/lib/types";
+
+interface CurrentUser {
+  id: string;
+  email: string;
+  displayName: string;
+}
+
+export default function Home() {
+  const [user, setUser] = useState<CurrentUser | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [courses, setCourses] = useState<CourseView[]>([]);
+  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [form, setForm] = useState({ email: "", displayName: "", password: "" });
+  const [newCourse, setNewCourse] = useState({ name: "", description: "" });
+  const [notice, setNotice] = useState<{ type: "error" | "success"; text: string } | null>(null);
+  const [working, setWorking] = useState(false);
+
+  const loadCourses = useCallback(async () => {
+    try {
+      const res = await fetch("/api/courses");
+      if (res.ok) {
+        const data = await res.json();
+        setCourses(data.courses ?? []);
+      }
+    } catch {
+      setCourses([]);
+    }
+  }, []);
+
+  const loadMe = useCallback(async () => {
+    const res = await fetch("/api/auth/me");
+    if (res.ok) {
+      const data = await res.json();
+      setUser(data.user);
+    } else {
+      setUser(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    let ignore = false;
+    async function initialize() {
+      await loadMe();
+      if (ignore) return;
+      setLoading(false);
+      await loadCourses();
+    }
+    void initialize();
+    return () => {
+      ignore = true;
+    };
+  }, [loadMe, loadCourses]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setNotice(null);
+    setWorking(true);
+    const url = mode === "signup" ? "/api/auth/signup" : "/api/auth/login";
+    const payload =
+      mode === "signup"
+        ? { email: form.email, displayName: form.displayName, password: form.password }
+        : { email: form.email, password: form.password };
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setNotice({ type: "error", text: data.error ?? "Something went wrong." });
+        return;
+      }
+      setForm({ email: "", displayName: "", password: "" });
+      await loadMe();
+      await loadCourses();
+      setLoading(false);
+    } catch {
+      setNotice({ type: "error", text: "Network error. Try again." });
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  async function handleCreateCourse(e: React.FormEvent) {
+    e.preventDefault();
+    setNotice(null);
+    setWorking(true);
+    try {
+      const res = await fetch("/api/courses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newCourse.name, description: newCourse.description }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setNotice({ type: "error", text: data.error ?? "Could not create course." });
+        return;
+      }
+      setNewCourse({ name: "", description: "" });
+      await loadCourses();
+    } catch {
+      setNotice({ type: "error", text: "Network error. Try again." });
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    setUser(null);
+    setCourses([]);
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-1 items-center justify-center p-12 text-sm text-zinc-500">
+        Loading…
+      </div>
+    );
+  }
 
   if (!user) {
     return (
@@ -191,13 +308,40 @@ export default async function Home() {
         )}
       </section>
 
-  return (
-    <Dashboard
-      user={{ id: user.id, email: user.email, displayName: user.displayName }}
-      courses={courses}
-      stats={stats}
-      headerAction={<SignOutButton />}
-      myTasks={<MyTasks userId={user.id} />}
-    />
+      <section className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+        <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">Create a course</h2>
+        <form onSubmit={handleCreateCourse} className="flex flex-col gap-4">
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="font-medium text-zinc-700 dark:text-zinc-300">Course name</span>
+            <input
+              type="text"
+              value={newCourse.name}
+              onChange={(e) => setNewCourse({ ...newCourse, name: e.target.value })}
+              className="rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
+              required
+              maxLength={80}
+              placeholder="e.g. Biology 101 Study Group"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="font-medium text-zinc-700 dark:text-zinc-300">Description</span>
+            <textarea
+              value={newCourse.description}
+              onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
+              rows={2}
+              className="rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
+              placeholder="What is this course about?"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={working}
+            className="self-start rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white transition hover:bg-indigo-500 disabled:opacity-60"
+          >
+            {working ? "Creating…" : "Create course"}
+          </button>
+        </form>
+      </section>
+    </main>
   );
 }

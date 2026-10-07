@@ -1,108 +1,37 @@
-# StudySync
-
-A collaborative study planner: one course hub per course, with shared tasks, resources, files, and
-group membership.
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
 
+First, run the development server:
+
 ```bash
-npm install
-cp .env.example .env
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Authentication
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-StudySync uses email/password authentication with database-backed sessions (W06 MVP scope).
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-- **Sign up** — `/signup` → `POST /api/auth/signup` (name, email, password). Passwords are hashed
-  with scrypt (`lib/passwords.ts`); the hash is stored on the `User` document.
-- **Login** — `/login` → `POST /api/auth/login`. A `Session` row is created and an httpOnly cookie
-  (`studysync_session`) is set.
-- **Logout** — `Sign out` button on the dashboard → `POST /api/auth/logout` deletes the session row
-  and clears the cookie.
-- **Session lookup** — `lib/auth.ts` `getSessionUser()` reads the cookie, loads the session from
-  MongoDB, checks expiry, and returns the user.
-- **Protected routes** — `proxy.ts` performs an optimistic cookie check on `/courses/*` and
-  redirects to `/login?next=...` when the cookie is missing. Real authorization happens in every
-  API route and server component (`getSessionUser()` + course membership checks).
+## Learn More
 
-Advanced auth (OAuth, email verification, password reset, 2FA) is future work.
+To learn more about Next.js, take a look at the following resources:
 
-## Landing page
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-`/` is public: visitors see `app/components/landing.tsx`. When a session exists, `/` renders the
-dashboard (`app/components/dashboard.tsx`) with live stats from MongoDB.
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## W06 MVP API surface
+## Deploy on Vercel
 
-### Auth
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-| Method | Path | Notes |
-| ------ | ---- | ----- |
-| POST | `/api/auth/signup` | Create account, sets session cookie |
-| POST | `/api/auth/login` | Email + password login |
-| POST | `/api/auth/logout` | Destroys the session |
-| GET | `/api/auth/me` | Current user, or 401 |
-
-### Courses
-
-| Method | Path | Notes |
-| ------ | ---- | ----- |
-| POST | `/api/courses` | Create a course (creator becomes owner) |
-| GET | `/api/courses` | List the signed-in user's courses |
-| GET | `/api/courses/{courseId}` | Course detail (members only) |
-| PATCH | `/api/courses/{courseId}` | Owner updates name/description/color |
-| DELETE | `/api/courses/{courseId}` | Owner deletes course + its tasks/resources |
-
-### Tasks
-
-| Method | Path | Notes |
-| ------ | ---- | ----- |
-| POST | `/api/tasks` | Create a task (`courseId` required) |
-| GET | `/api/tasks` | List tasks in the user's courses (filters: `status`, `assignee`, `courseId`, `limit`) |
-| GET | `/api/courses/{courseId}/tasks` | Tasks for one course (nested variant) |
-| POST | `/api/courses/{courseId}/tasks` | Create a task in one course (nested variant) |
-| GET | `/api/tasks/{taskId}` | Task detail |
-| PATCH | `/api/tasks/{taskId}` | Update title/description/dueDate/assignee/status |
-| DELETE | `/api/tasks/{taskId}` | Delete a task |
-
-Task statuses: `not-started`, `in-progress`, `completed`.
-
-### Resources
-
-| Method | Path | Notes |
-| ------ | ---- | ----- |
-| GET/POST | `/api/courses/{courseId}/resources` | List/add resources (links or files) |
-| GET/PATCH/DELETE | `/api/resources/{resourceId}` | Read/update/delete one resource |
-| GET | `/api/resources/{resourceId}/file` | Download an uploaded file |
-
-The MVP primarily uses **link resources** (URL + metadata). File uploads still work but full
-file-storage infrastructure is not part of the MVP focus.
-
-## Dashboard and course workspace
-
-- **Dashboard** (`/`) — course count, active vs completed tasks, overall progress bar, upcoming
-  tasks, course list with per-course task summaries, quick actions (new course / new task), and
-  the signed-in user's assigned tasks.
-- **Course workspace** (`/courses/{courseId}`) — course info, member list (owner can add members),
-  task board with statuses and progress, study resources (links + files), empty states, and
-  owner-only course settings (rename, edit description, delete).
-
-## Metadata
-
-- `app/layout.tsx` — site-wide title template, description, keywords, Open Graph, and Twitter tags.
-- `app/opengraph-image.tsx` — generated 1200×630 social preview image.
-- `app/courses/[courseId]/layout.tsx` — `generateMetadata()` builds a title and description from the
-  course, but only for members; everyone else gets a generic, `noindex` title.
-- `app/robots.ts` and `app/sitemap.ts` — file-based metadata conventions.
-
-## Scripts
-
-```bash
-npm run dev     # start the dev server
-npm run build   # production build
-npm run lint    # ESLint
-```
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+more

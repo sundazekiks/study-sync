@@ -31,27 +31,17 @@ const userSchema = new mongoose.Schema({
 
 const sessionSchema = new mongoose.Schema({
   _id: { type: String, required: true },
-  userId: { type: String, required: true, index: true },
+  token: { type: String, required: true, unique: true },
+  userId: { type: String, required: true },
   createdAt: { type: String, required: true },
-  expiresAt: { type: Date, required: true, index: true },
+  expiresAt: { type: String, required: true },
 });
-sessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 const membershipSchema = new mongoose.Schema(
   {
     userId: { type: String, required: true },
     role: { type: String, enum: ["owner", "moderator", "member"], required: true },
     joinedAt: { type: String, required: true },
-  },
-  { _id: false }
-);
-
-const taskSummarySchema = new mongoose.Schema(
-  {
-    total: { type: Number, default: 0 },
-    notStarted: { type: Number, default: 0 },
-    inProgress: { type: Number, default: 0 },
-    completed: { type: Number, default: 0 },
   },
   { _id: false }
 );
@@ -63,27 +53,7 @@ const courseSchema = new mongoose.Schema({
   color: { type: String, default: "#6366f1" },
   ownerId: { type: String, required: true },
   members: { type: [membershipSchema], default: [] },
-  taskSummary: { type: taskSummarySchema, default: () => ({}) },
   createdAt: { type: String, required: true },
-});
-
-const taskSchema = new mongoose.Schema({
-  _id: { type: String, required: true },
-  courseId: { type: String, required: true, index: true },
-  title: { type: String, required: true },
-  description: { type: String, default: "" },
-  dueDate: { type: String, default: "" },
-  assigneeId: { type: String, default: "" },
-  status: {
-    type: String,
-    enum: ["not-started", "in-progress", "completed"],
-    default: "not-started",
-    required: true,
-  },
-  createdById: { type: String, required: true },
-  createdAt: { type: String, required: true },
-  updatedById: { type: String, required: true },
-  updatedAt: { type: String, required: true },
 });
 
 const resourceSchema = new mongoose.Schema({
@@ -112,9 +82,6 @@ export const Session =
 export const Course =
   (mongoose.models.Course as mongoose.Model<CourseDoc>) ??
   mongoose.model<CourseDoc>("Course", courseSchema);
-export const Task =
-  (mongoose.models.Task as mongoose.Model<TaskDoc>) ??
-  mongoose.model<TaskDoc>("Task", taskSchema);
 export const Resource =
   (mongoose.models.Resource as mongoose.Model<ResourceDoc>) ??
   mongoose.model<ResourceDoc>("Resource", resourceSchema);
@@ -129,9 +96,10 @@ export interface UserDoc {
 
 export interface SessionDoc {
   _id: string;
+  token: string;
   userId: string;
   createdAt: string;
-  expiresAt: Date;
+  expiresAt: string;
 }
 
 export interface MembershipDoc {
@@ -147,29 +115,7 @@ export interface CourseDoc {
   color: string;
   ownerId: string;
   members: MembershipDoc[];
-  taskSummary?: TaskSummaryDoc;
   createdAt: string;
-}
-
-export interface TaskSummaryDoc {
-  total: number;
-  notStarted: number;
-  inProgress: number;
-  completed: number;
-}
-
-export interface TaskDoc {
-  _id: string;
-  courseId: string;
-  title: string;
-  description: string;
-  dueDate: string;
-  assigneeId: string;
-  status: "not-started" | "in-progress" | "completed";
-  createdById: string;
-  createdAt: string;
-  updatedById: string;
-  updatedAt: string;
 }
 
 export interface ResourceDoc {
@@ -191,23 +137,20 @@ export interface ResourceDoc {
 
 export type UserDocLean = UserDoc & { _id: string };
 export type CourseDocLean = CourseDoc & { _id: string };
-export type TaskDocLean = TaskDoc & { _id: string };
 export type ResourceDocLean = ResourceDoc & { _id: string };
-
-export function emptyTaskSummary(): TaskSummaryDoc {
-  return { total: 0, notStarted: 0, inProgress: 0, completed: 0 };
-}
 
 export function toUser(doc: UserDoc): {
   id: string;
   email: string;
   displayName: string;
+  passwordHash: string;
   createdAt: string;
 } {
   return {
     id: doc._id,
     email: doc.email,
     displayName: doc.displayName,
+    passwordHash: doc.passwordHash,
     createdAt: doc.createdAt,
   };
 }
@@ -219,7 +162,6 @@ export function toCourse(doc: CourseDoc): {
   color: string;
   ownerId: string;
   members: MembershipDoc[];
-  taskSummary: TaskSummaryDoc;
   createdAt: string;
 } {
   return {
@@ -229,36 +171,7 @@ export function toCourse(doc: CourseDoc): {
     color: doc.color,
     ownerId: doc.ownerId,
     members: doc.members,
-    taskSummary: doc.taskSummary ?? emptyTaskSummary(),
     createdAt: doc.createdAt,
-  };
-}
-
-export function toTask(doc: TaskDoc): {
-  id: string;
-  courseId: string;
-  title: string;
-  description: string;
-  dueDate: string;
-  assigneeId: string;
-  status: "not-started" | "in-progress" | "completed";
-  createdById: string;
-  createdAt: string;
-  updatedById: string;
-  updatedAt: string;
-} {
-  return {
-    id: doc._id,
-    courseId: doc.courseId,
-    title: doc.title,
-    description: doc.description,
-    dueDate: doc.dueDate,
-    assigneeId: doc.assigneeId,
-    status: doc.status,
-    createdById: doc.createdById,
-    createdAt: doc.createdAt,
-    updatedById: doc.updatedById,
-    updatedAt: doc.updatedAt,
   };
 }
 
