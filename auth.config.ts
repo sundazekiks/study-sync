@@ -15,8 +15,11 @@ export const authConfig = {
                 return isLoggedIn; // false -> redirected to /login
             }
 
-            // Logged-in users shouldn't see the login page
-            if (isLoggedIn && nextUrl.pathname === "/login") {
+            // Logged-in users shouldn't see the login/signup pages
+            if (
+                isLoggedIn &&
+                (nextUrl.pathname === "/login" || nextUrl.pathname === "/signup")
+            ) {
                 return Response.redirect(new URL("/courses", nextUrl));
             }
 
