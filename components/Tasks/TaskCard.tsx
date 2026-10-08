@@ -1,10 +1,18 @@
 import { TaskDoc } from "@/lib/schemas/task";
 
 
+function formatBytes(bytes?: number): string {
+    if (!bytes) return "0 B";
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 
 export default function TaskCard({ props }: { props: TaskDoc }) {
     const total = props.checkList.length;
     const done = props.checkList.filter((item) => item.complete).length;
+    const attachments = props.attachments ?? [];
 
     return (
         <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
@@ -62,6 +70,30 @@ export default function TaskCard({ props }: { props: TaskDoc }) {
                 )}
             </div>
 
+            {/* Attachments */}
+            {attachments.length > 0 && (
+                <div className="mt-4 flex flex-col gap-2">
+                    <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                        Files ({attachments.length})
+                    </span>
+                    {attachments.map((attachment) => (
+                        <a
+                            key={attachment.fileId}
+                            href={`/api/tasks/${props._id}/attachments/${attachment.fileId}`}
+                            className="flex items-center gap-2.5 rounded-lg border border-slate-200 px-2.5 py-2 transition-colors hover:border-teal-300 hover:bg-slate-50"
+                        >
+                            <PaperclipIcon />
+                            <span className="min-w-0 flex-1 truncate text-sm text-slate-700">
+                                {attachment.name}
+                            </span>
+                            <span className="shrink-0 text-xs text-slate-400">
+                                {formatBytes(attachment.size ?? undefined)}
+                            </span>
+                        </a>
+                    ))}
+                </div>
+            )}
+
             {/* Footer */}
             <p className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-400">
                 Created{" "}
@@ -72,5 +104,22 @@ export default function TaskCard({ props }: { props: TaskDoc }) {
                 })}
             </p>
         </div>
+    );
+}
+
+function PaperclipIcon() {
+    return (
+        <svg
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-4 w-4 shrink-0 text-teal-500"
+            aria-hidden
+        >
+            <path d="M13.5 6.5l-4.6 4.6a1.5 1.5 0 002.1 2.1l4.6-4.6a3 3 0 00-4.2-4.2l-5.3 5.3a4.5 3.5 0 106.4 6.4l4-4" />
+        </svg>
     );
 }

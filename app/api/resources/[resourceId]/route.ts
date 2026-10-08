@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getSessionUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/session";
 import { connectDB, Course as CourseModel, Resource as ResourceModel, toCourse, User as UserModel } from "@/lib/mongo";
 import type { Course } from "@/lib/types";
 import { canManageResource, isMember } from "@/lib/permissions";
@@ -55,7 +55,7 @@ function toView(resource: ResourceDocLean, course: Course, currentUserId: string
 
 export async function GET(_req: Request, ctx: RouteContext<"/api/resources/[resourceId]">) {
   const { resourceId } = await ctx.params;
-  const user = await getSessionUser();
+  const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
@@ -74,7 +74,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/resources/[reso
 
 export async function PATCH(req: Request, ctx: RouteContext<"/api/resources/[resourceId]">) {
   const { resourceId } = await ctx.params;
-  const user = await getSessionUser();
+  const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
@@ -199,7 +199,7 @@ export async function PATCH(req: Request, ctx: RouteContext<"/api/resources/[res
 
 export async function DELETE(_req: Request, ctx: RouteContext<"/api/resources/[resourceId]">) {
   const { resourceId } = await ctx.params;
-  const user = await getSessionUser();
+  const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
