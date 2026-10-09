@@ -49,6 +49,16 @@ export async function deleteSession(token: string): Promise<void> {
 }
 
 export async function getSessionUser(): Promise<User | null> {
+  const { auth } = await import("../auth");
+  const authSession = await auth();
+  const authUserId = authSession?.user?.id;
+
+  if (authUserId) {
+    await connectDB();
+    const authUser = await UserModel.findById(authUserId).lean();
+    if (authUser) return toUser(authUser);
+  }
+
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) return null;
