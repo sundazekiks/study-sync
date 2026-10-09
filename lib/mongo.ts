@@ -9,12 +9,20 @@ const cached = globalThis as unknown as {
 
 export async function connectDB(): Promise<typeof mongoose> {
   if (!cached.mongoose) cached.mongoose = { conn: null, promise: null };
-  if (cached.mongoose.conn) return cached.mongoose.conn;
-  if (!cached.mongoose.promise) {
-    cached.mongoose.promise = mongoose.connect(MONGODB_URI);
+  const state = cached.mongoose;
+  if (state.conn) return state.conn;
+  let promise = state.promise;
+  if (!promise) {
+    promise = mongoose.connect(MONGODB_URI).catch((error: unknown) => {
+      state.conn = null;
+      state.promise = null;
+      throw error;
+    });
+    state.promise = promise;
   }
-  cached.mongoose.conn = await cached.mongoose.promise;
-  return cached.mongoose.conn;
+  const connection = await promise;
+  state.conn = connection;
+  return connection;
 }
 
 export function newId(prefix: string): string {
