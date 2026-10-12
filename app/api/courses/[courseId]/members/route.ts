@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getSessionUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/session";
 import { connectDB, Course as CourseModel, toCourse, User as UserModel } from "@/lib/mongo";
 import { getRole } from "@/lib/permissions";
 import type { Role } from "@/lib/types";
@@ -9,7 +9,7 @@ const ROLES: Role[] = ["owner", "moderator", "member"];
 
 export async function POST(req: Request, ctx: RouteContext<"/api/courses/[courseId]/members">) {
   const { courseId } = await ctx.params;
-  const user = await getSessionUser();
+  const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }

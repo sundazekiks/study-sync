@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 
-import { getSessionUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/session";
 import { connectDB, Course as CourseModel, Resource as ResourceModel, toCourse } from "@/lib/mongo";
 import { isMember } from "@/lib/permissions";
 import { readUpload } from "@/lib/uploads";
 
 export async function GET(_req: Request, ctx: RouteContext<"/api/resources/[resourceId]/file">) {
   const { resourceId } = await ctx.params;
-  const user = await getSessionUser();
+  const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }

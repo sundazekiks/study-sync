@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getSessionUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/session";
 import { connectDB, Course as CourseModel, toCourse } from "@/lib/mongo";
 import { getRole } from "@/lib/permissions";
 import type { Role } from "@/lib/types";
@@ -12,7 +12,7 @@ export async function PATCH(
   ctx: RouteContext<"/api/courses/[courseId]/members/[userId]">
 ) {
   const { courseId, userId } = await ctx.params;
-  const user = await getSessionUser();
+  const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
@@ -64,7 +64,7 @@ export async function DELETE(
   ctx: RouteContext<"/api/courses/[courseId]/members/[userId]">
 ) {
   const { courseId, userId } = await ctx.params;
-  const user = await getSessionUser();
+  const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }

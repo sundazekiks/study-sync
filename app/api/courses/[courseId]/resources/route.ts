@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getSessionUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/session";
 import { connectDB, Course as CourseModel, newId, Resource as ResourceModel, toCourse, User as UserModel } from "@/lib/mongo";
 import { canManageResource, isMember } from "@/lib/permissions";
 import type { Course, ResourceView } from "@/lib/types";
@@ -52,7 +52,7 @@ function toView(
 
 export async function GET(_req: Request, ctx: RouteContext<"/api/courses/[courseId]/resources">) {
   const { courseId } = await ctx.params;
-  const user = await getSessionUser();
+  const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
@@ -77,7 +77,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/courses/[course
 
 export async function POST(req: Request, ctx: RouteContext<"/api/courses/[courseId]/resources">) {
   const { courseId } = await ctx.params;
-  const user = await getSessionUser();
+  const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }

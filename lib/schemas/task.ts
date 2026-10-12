@@ -8,6 +8,15 @@ const CheckpointSchema = new mongoose.Schema({
 }, { _id: false })
 
 
+const AttachmentSchema = new mongoose.Schema({
+    fileId: String,
+    name: String,
+    mimeType: String,
+    size: Number,
+    uploadedAt: { type: Date, default: Date.now }
+}, { _id: false })
+
+
 const TaskSchema = new mongoose.Schema({
     userId: {
         type: String,
@@ -26,6 +35,10 @@ const TaskSchema = new mongoose.Schema({
     checkList: {
         type: [CheckpointSchema]
     },
+    attachments: {
+        type: [AttachmentSchema],
+        default: []
+    },
     createdAt: {
         type: Date,
         default: Date.now()
@@ -40,6 +53,8 @@ type TaskSchemaType = InferSchemaType<typeof TaskSchema>;
 export type TaskDoc = HydratedDocument<TaskSchemaType>;
 
 export type CheckPointDoc = InferSchemaType<typeof CheckpointSchema>;
+
+export type AttachmentDoc = InferSchemaType<typeof AttachmentSchema>;
 
 export const Task =
     (mongoose.models.Task as mongoose.Model<TaskSchemaType>) ??
